@@ -1,0 +1,25 @@
+#!/bin/bash
+
+declare -A CODEMAP=( \
+  [1.8.0]="total_import" \
+  [2.8.0]="total_export" \
+)
+
+TOPIC_PREFIX='meters/household_electric'
+
+echo starting
+
+while read line
+do
+  if [[ $line =~ ^([0-9\.]*)=([^\*]*)(\*(.*))?$ ]]; then
+    # We found a line
+    code=${BASH_REMATCH[1]}
+    value=${BASH_REMATCH[2]}
+    units=${BASH_REMATCH[4]} 
+    if [ ! -z ${CODEMAP[$code]} ]; then
+      topic_suffix=${CODEMAP[$code]}
+      mosquitto_pub -h 192.168.0.5 -t "${TOPIC_PREFIX}/${topic_suffix}" -m ${value}
+      echo "$(date -Iseconds): ${TOPIC_PREFIX}/${topic_suffix} ${value}"
+    fi
+fi
+done < /dev/stdin
